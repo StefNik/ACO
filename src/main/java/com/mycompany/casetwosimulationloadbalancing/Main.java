@@ -20,7 +20,7 @@ public class Main {
 
         //classes and code has been taken from: http://www.vogella.com/tutorials/JavaAlgorithmsDijkstra/article.html
         TestDijkstraAlgorithm tD = new TestDijkstraAlgorithm();
-        tD.test2Excute();
+        tD.testExcute();
 
         TestSIloadBalancingAlgorithm tD2 = new TestSIloadBalancingAlgorithm();
         tD2.testExcute();

@@ -14,7 +14,7 @@ public class Edge {
     private final String id;
     private final Vertex source;
     private final Vertex destination;
-    private final int weight;
+    private int weight;
     private double pheromone;
 
     public Edge(String id, Vertex source, Vertex destination, int weight) {

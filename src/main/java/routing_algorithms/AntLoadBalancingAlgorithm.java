@@ -11,6 +11,7 @@ import important_classes.Vertex;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class AntLoadBalancingAlgorithm {
     private final int numOfAnts;
     private Set<Vertex> settledNodes;
     private Set<Vertex> unSettledNodes;
-    private Map<Vertex, Vertex> predecessors;
+    private ArrayList<ArrayList<Edge>> pathOfEachAnt = new ArrayList<>();
 
     public AntLoadBalancingAlgorithm(Graph graph, int alphaVal, int numOfAnts) {
         // create a copy of the array so that we can operate on this array
@@ -57,52 +58,95 @@ public class AntLoadBalancingAlgorithm {
 
         for (int k = 0; k < 50; k++) {
             for (int j = 0; j < this.numOfAnts; j++) {
-                predecessors = new HashMap<Vertex, Vertex>();
-
+                pathOfEachAnt.add(new ArrayList<>());
                 Vertex node = source;
-                int count = -1;
+                int count = 0;
                 do {
                     List<Vertex> adjacentNodes = getNeighbors(node);
-                    List<Double> pheromoneOfEachPath = new ArrayList<Double>();
-                    List<Double> transitionProbsOfVertex = new ArrayList<Double>();
+                    for (Vertex ver : adjacentNodes) {
+                        System.out.println("The neighbour of " + node.getId() + " is " + ver.getId());
+                    }
+
+                    HashMap< Edge, Double> pheromoneOfEachPath = new HashMap<Edge, Double>();
+                    HashMap< Edge, Double> transitionProbsOfVertex = new HashMap<Edge, Double>();
+
+                    double sum = 0d; //here are sumed all the pheromone values in the power of alpha
+                    //for each adjancent node return the edge that conencts it to the current node
+                    //and return the pheromone of the path
+                    //and then store it to the HashMap `pheromoneOfEachPath` allong with the pheromone value
+                    //finally, sum it to the total pheromone depocited in the edges connecting the current node
+                    //to others
                     for (Vertex v : adjacentNodes) {
                         // System.out.println("the pheromone in this path is: " + getPheromoneConcentration(node, v));
-                        pheromoneOfEachPath.add(getPheromoneConcentration(node, v));
+                        Edge temp = this.getEdgeConnectingTwoNodes(node, v);
+                        pheromoneOfEachPath.put(temp, temp.getPheromone());
+                        sum += Math.pow(temp.getPheromone(), this.alphaVal);
                     }
-                    double sum = 0d;
-                    for (double el : pheromoneOfEachPath) {
-                        sum += Math.pow(el, this.alphaVal);
-                    }
-                    // System.out.println(" the sum is: " + sum);
-                    for (double el : pheromoneOfEachPath) {
-                        transitionProbsOfVertex.add(Math.pow(el, this.alphaVal) / sum);
+                    System.out.println("the total sum of the pheromones in the power of " + this.alphaVal + " is: " + sum);
+                    //in this loop calculate the transition probability for all the edges
+                    for (Map.Entry<Edge, Double> entry : pheromoneOfEachPath.entrySet()) {
+                        transitionProbsOfVertex.put(entry.getKey(), Math.pow(entry.getValue(), this.alphaVal) / sum);
+                        System.out.println("The transition probability of the edge with source-> " + entry.getKey().getSource().getId() + " and destination-> " + entry.getKey().getDestination().getId() + " is: " + Math.pow(entry.getValue(), this.alphaVal) / sum);
                     }
 
                     double p = Math.random();
                     double cumulativeProbability = 0.0;
-                    for (int i = 0; i < transitionProbsOfVertex.size(); i++) {
-                        cumulativeProbability += transitionProbsOfVertex.get(i);
+                    for (Map.Entry<Edge, Double> entry : transitionProbsOfVertex.entrySet()) {
+                        cumulativeProbability += entry.getValue();
                         if (p <= cumulativeProbability) {
-                            /*
-                    SOSOSOSOOS:
-                        Swse auto to bhma sto Map predecessors, protou kaneis 
-                        kainourgia epanalhpsh (bale to palio stous episkeptomenous kombous)
-                             */
-                            System.out.println("kai allo monopati prostethhke sth lush: " + node + " -> " + adjacentNodes.get(i).getId());
-                            predecessors.put(adjacentNodes.get(i), node);
-
-                            node = adjacentNodes.get(i);
+                            System.out.println("kai allo monopati prostethhke sth lush: " + node + " -> " + entry.getKey().getDestination().getId());
+                            pathOfEachAnt.get(j).add(entry.getKey());
+                            node = entry.getKey().getDestination();
+                            break;
                         }
-                        // System.out.println("the probability is: " + p + " \n and the sumCum is: " + cumulativeProbability + "\n last added probability: " + transitionProbsOfVertex.get(i));
+                    }
+                    if (count == 300) {
+                        System.exit(1);
                     }
 
+                    count++;
                 } while (!node.equals(destination));
+
+                System.out.println("\n\nTo solution apo to ant: " + j + " einai:");
+                System.out.print(pathOfEachAnt.get(j).get(0).getSource().getId() + "->" + pathOfEachAnt.get(j).get(0).getDestination().getId() + "->");
+                for (int i = 1; i < pathOfEachAnt.get(j).size() - 1; i++) {
+                    System.out.print(pathOfEachAnt.get(j).get(i).getDestination().getId() + "->");
+                }
+                System.out.print(pathOfEachAnt.get(j).get(pathOfEachAnt.get(j).size() - 1).getDestination().getId());
+                System.out.println();
+                
+                
+                /* 
+                SOSOSOSOSOS: remove the loops from the path:
+                
+                */
+                
+                
+                /*
+                SOSOSOSOSOS: kane update thpheromonh gia to kathe path edw kai meta meiwse th 
+                             pheromonh sta edges pou den peiran meros mesa sto path
+                 */
+                //find mean pheromone in the edges
+                Double mu = 0d;
+                for (Edge ed : edges) {
+                    mu += ed.getPheromone();
+                    System.out.println("The pheromone in the edge with source node->" + ed.getSource().getId() + " and destination node->" + ed.getDestination().getId() + " is: " + ed.getPheromone());
+                }
+                mu = mu / (double) edges.size();
+
+                System.out.println("\nThe mean value of the deposited pheromone in the graph is: " + mu);
+                System.exit(1);
+                
+                double valueOfEvaporatedPheromone = mu/100;
+                
+                
+                /*
                 List<Vertex> lV = this.getPath(destination);
                 System.out.println("\n\n h lush einai: ");
                 for (Vertex v : lV) {
                     System.out.println(v.getName());
                 }
-
+                 */
             } // each ant path
         } // run the algorithm 50 times 
         return null;
@@ -120,7 +164,7 @@ public class AntLoadBalancingAlgorithm {
         return neighbors;
     }
 
-    //epistrefh thn apostash metaksu duo korufwn
+    //epistrefh th feromonh metaksu duo korufwn
     private double getPheromoneConcentration(Vertex node, Vertex target) {
         for (Edge edge : edges) {
             if (edge.getSource().equals(node) && edge.getDestination().equals(target)) {
@@ -132,6 +176,17 @@ public class AntLoadBalancingAlgorithm {
         throw new RuntimeException("Should not happen");
     }
 
+    //get edge between two nodes
+    private Edge getEdgeConnectingTwoNodes(Vertex node, Vertex target) {
+        for (Edge edge : edges) {
+            if (edge.getSource().equals(node) && edge.getDestination().equals(target)) {
+                return edge;
+            }
+        }
+
+        throw new RuntimeException("Should not happen");
+    }
+    /*
     public LinkedList<Vertex> getPath(Vertex target) {
         LinkedList<Vertex> path = new LinkedList<Vertex>();
         Vertex step = target;
@@ -149,5 +204,7 @@ public class AntLoadBalancingAlgorithm {
         // Put it into the correct order
         Collections.reverse(path);
         return path;
-    }
+    } 
+     */
+
 }
