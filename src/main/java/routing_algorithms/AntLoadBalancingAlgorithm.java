@@ -114,15 +114,12 @@ public class AntLoadBalancingAlgorithm {
                 }
                 System.out.print(pathOfEachAnt.get(j).get(pathOfEachAnt.get(j).size() - 1).getDestination().getId());
                 System.out.println();
-                
-                
+
                 /* 
                 SOSOSOSOSOS: remove the loops from the path:
                 
-                */
-                
-                
-                /*
+                 */
+ /*
                 SOSOSOSOSOS: kane update thpheromonh gia to kathe path edw kai meta meiwse th 
                              pheromonh sta edges pou den peiran meros mesa sto path
                  */
@@ -135,11 +132,13 @@ public class AntLoadBalancingAlgorithm {
                 mu = mu / (double) edges.size();
 
                 System.out.println("\nThe mean value of the deposited pheromone in the graph is: " + mu);
+                
+
+                double valueOfEvaporatedPheromone = mu / 100;
+                System.out.println("the value of the evaporated pheromone is: " + valueOfEvaporatedPheromone);
+                
+                
                 System.exit(1);
-                
-                double valueOfEvaporatedPheromone = mu/100;
-                
-                
                 /*
                 List<Vertex> lV = this.getPath(destination);
                 System.out.println("\n\n h lush einai: ");
