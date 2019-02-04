@@ -44,14 +44,14 @@ public class AntLoadBalancingAlgorithm {
         this.nodes = new ArrayList<Vertex>(graph.getVertexes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
         this.alphaVal = alphaVal;
-        this.numOfAnts = 20;
+        this.numOfAnts = 100;
     }
 
     public AntLoadBalancingAlgorithm(Graph graph) {
         this.nodes = new ArrayList<Vertex>(graph.getVertexes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
         this.alphaVal = 1;
-        this.numOfAnts = 20;
+        this.numOfAnts = 100;
     }
 
     public LinkedList<Vertex> executeAndGetPath(Vertex source, Vertex destination) {
@@ -61,6 +61,7 @@ public class AntLoadBalancingAlgorithm {
                 pathOfEachAnt.add(new ArrayList<>());
                 Vertex node = source;
                 int count = 0;
+                boolean isThePathCyclic = false;
                 do {
                     List<Vertex> adjacentNodes = getNeighbors(node);
                     for (Vertex ver : adjacentNodes) {
@@ -82,11 +83,11 @@ public class AntLoadBalancingAlgorithm {
                         pheromoneOfEachPath.put(temp, temp.getPheromone());
                         sum += Math.pow(temp.getPheromone(), this.alphaVal);
                     }
-                    System.out.println("the total sum of the pheromones in the power of " + this.alphaVal + " is: " + sum);
+                    //  System.out.println("the total sum of the pheromones in the power of " + this.alphaVal + " is: " + sum);
                     //in this loop calculate the transition probability for all the edges
                     for (Map.Entry<Edge, Double> entry : pheromoneOfEachPath.entrySet()) {
                         transitionProbsOfVertex.put(entry.getKey(), Math.pow(entry.getValue(), this.alphaVal) / sum);
-                        System.out.println("The transition probability of the edge with source-> " + entry.getKey().getSource().getId() + " and destination-> " + entry.getKey().getDestination().getId() + " is: " + Math.pow(entry.getValue(), this.alphaVal) / sum);
+                        //  System.out.println("The transition probability of the edge with source-> " + entry.getKey().getSource().getId() + " and destination-> " + entry.getKey().getDestination().getId() + " is: " + Math.pow(entry.getValue(), this.alphaVal) / sum);
                     }
 
                     double p = Math.random();
@@ -94,11 +95,25 @@ public class AntLoadBalancingAlgorithm {
                     for (Map.Entry<Edge, Double> entry : transitionProbsOfVertex.entrySet()) {
                         cumulativeProbability += entry.getValue();
                         if (p <= cumulativeProbability) {
-                            System.out.println("kai allo monopati prostethhke sth lush: " + node + " -> " + entry.getKey().getDestination().getId());
+
+                            System.out.println("the selected edge is: " + entry.getKey());
+
+                            // pathOfEachAnt.get(j).stream().forEach(item -> System.out.print(item.getDestination().getId() + " "));
+                            isThePathCyclic = pathOfEachAnt.get(j).stream().anyMatch(item -> {
+                                return item.getDestination().getId().equals(entry.getKey().getSource().getId());
+                            });
+
+                            System.out.println("\nkai allo monopati prostethhke sth lush: " + node + " -> " + entry.getKey().getDestination().getId());
                             pathOfEachAnt.get(j).add(entry.getKey());
                             node = entry.getKey().getDestination();
+
                             break;
                         }
+                    }
+                    if (isThePathCyclic) {
+                        //System.out.println("The path is cyclic!!!");
+                        //kill this ant
+                        break;
                     }
                     if (count == 300) {
                         System.exit(1);
@@ -106,6 +121,12 @@ public class AntLoadBalancingAlgorithm {
 
                     count++;
                 } while (!node.equals(destination));
+
+                if (isThePathCyclic) {
+                    System.out.println("The path is cyclic!!!");
+                    //kill this ant and dont calculate anything else
+                    continue;
+                }
 
                 System.out.println("\n\nTo solution apo to ant: " + j + " einai:");
                 System.out.print(pathOfEachAnt.get(j).get(0).getSource().getId() + "->" + pathOfEachAnt.get(j).get(0).getDestination().getId() + "->");
@@ -132,12 +153,10 @@ public class AntLoadBalancingAlgorithm {
                 mu = mu / (double) edges.size();
 
                 System.out.println("\nThe mean value of the deposited pheromone in the graph is: " + mu);
-                
 
                 double valueOfEvaporatedPheromone = mu / 100;
                 System.out.println("the value of the evaporated pheromone is: " + valueOfEvaporatedPheromone);
-                
-                
+
                 System.exit(1);
                 /*
                 List<Vertex> lV = this.getPath(destination);
