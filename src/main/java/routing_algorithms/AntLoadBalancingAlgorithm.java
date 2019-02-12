@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -27,6 +28,9 @@ public class AntLoadBalancingAlgorithm {
     private final List<Edge> edges;
     private final int alphaVal;
     private final int numOfAnts;
+
+    private final int numOfEdges;
+
     private Set<Vertex> settledNodes;
     private Set<Vertex> unSettledNodes;
     private ArrayList<ArrayList<Edge>> pathOfEachAnt = new ArrayList<>();
@@ -37,6 +41,8 @@ public class AntLoadBalancingAlgorithm {
         this.edges = new ArrayList<Edge>(graph.getEdges());
         this.alphaVal = alphaVal;
         this.numOfAnts = numOfAnts;
+        //this.numOfEdges = (int) graph.getEdges().stream().filter(p -> p.getId().contains("a")).count();
+        this.numOfEdges = graph.getEdges().size() / 2;
     }
 
     public AntLoadBalancingAlgorithm(Graph graph, int alphaVal) {
@@ -44,7 +50,9 @@ public class AntLoadBalancingAlgorithm {
         this.nodes = new ArrayList<Vertex>(graph.getVertexes());
         this.edges = new ArrayList<Edge>(graph.getEdges());
         this.alphaVal = alphaVal;
-        this.numOfAnts = 100;
+        this.numOfAnts = 10;
+        //this.numOfEdges = (int) graph.getEdges().stream().filter(p -> p.getId().contains("a")).count();
+        this.numOfEdges = graph.getEdges().size() / 2;
     }
 
     public AntLoadBalancingAlgorithm(Graph graph) {
@@ -52,13 +60,15 @@ public class AntLoadBalancingAlgorithm {
         this.edges = new ArrayList<Edge>(graph.getEdges());
         this.alphaVal = 1;
         this.numOfAnts = 100;
+        //this.numOfEdges = (int) graph.getEdges().stream().filter(p -> p.getId().contains("a")).count();
+        this.numOfEdges = graph.getEdges().size() / 2;
     }
 
     public LinkedList<Vertex> executeAndGetPath(Vertex source, Vertex destination) {
 
-        for (int k = 0; k < 50; k++) {
+        for (int k = 0; k < 100; k++) {
             for (int j = 0; j < this.numOfAnts; j++) {
-                pathOfEachAnt.add(new ArrayList<>());
+                pathOfEachAnt.add(j, new ArrayList<>());
                 Vertex node = source;
                 int count = 0;
                 boolean isThePathCyclic = false;
@@ -87,22 +97,26 @@ public class AntLoadBalancingAlgorithm {
                     //in this loop calculate the transition probability for all the edges
                     for (Map.Entry<Edge, Double> entry : pheromoneOfEachPath.entrySet()) {
                         transitionProbsOfVertex.put(entry.getKey(), Math.pow(entry.getValue(), this.alphaVal) / sum);
-                        //  System.out.println("The transition probability of the edge with source-> " + entry.getKey().getSource().getId() + " and destination-> " + entry.getKey().getDestination().getId() + " is: " + Math.pow(entry.getValue(), this.alphaVal) / sum);
+                        // System.out.println("The transition probability of the edge with source-> " + entry.getKey().getSource().getId() + " and destination-> " + entry.getKey().getDestination().getId() + " is: " + Math.pow(entry.getValue(), this.alphaVal) / sum + " " + entry.getValue() + " " + sum);
                     }
 
                     double p = Math.random();
-                    double cumulativeProbability = 0.0;
+                    double cumulativeProbability = 0.0d;
                     for (Map.Entry<Edge, Double> entry : transitionProbsOfVertex.entrySet()) {
                         cumulativeProbability += entry.getValue();
+                        //System.out.println("the transition prob is: " + entry.getValue() + "the cumulative prop is:" + cumulativeProbability + " the prob is: " + p);
                         if (p <= cumulativeProbability) {
 
-                            System.out.println("the selected edge is: " + entry.getKey());
+                            System.out.println("the selected edge is: " + entry.getKey().getDestination().getId());
 
-                            // pathOfEachAnt.get(j).stream().forEach(item -> System.out.print(item.getDestination().getId() + " "));
+                            pathOfEachAnt.get(j).stream().forEach(item -> System.out.print(item.getDestination().getId() + " "));
                             isThePathCyclic = pathOfEachAnt.get(j).stream().anyMatch(item -> {
-                                return item.getDestination().getId().equals(entry.getKey().getSource().getId());
+                                return item.getSource().getId().equals(entry.getKey().getDestination().getId());
                             });
 
+                            if (isThePathCyclic) {
+                                break;
+                            }
                             System.out.println("\nkai allo monopati prostethhke sth lush: " + node + " -> " + entry.getKey().getDestination().getId());
                             pathOfEachAnt.get(j).add(entry.getKey());
                             node = entry.getKey().getDestination();
@@ -110,41 +124,46 @@ public class AntLoadBalancingAlgorithm {
                             break;
                         }
                     }
+                    /*
+                    if (count == 1) {
+                        System.exit(1);
+                    }
+                     */
+
                     if (isThePathCyclic) {
-                        //System.out.println("The path is cyclic!!!");
+                        System.out.println("The path is cyclic!!!");
                         //kill this ant
                         break;
                     }
-                    if (count == 300) {
-                        System.exit(1);
+                    //if the path has more edges than the graph kill the ant
+                    if (count == numOfEdges + (int) numOfEdges / 3) {
+                        break;
+                        //System.exit(1);
                     }
-
                     count++;
                 } while (!node.equals(destination));
-
                 if (isThePathCyclic) {
                     System.out.println("The path is cyclic!!!");
-                    //kill this ant and dont calculate anything else
+                    //kill this ant
                     continue;
                 }
-
+                double totalLengthOfThePath = 0d;
                 System.out.println("\n\nTo solution apo to ant: " + j + " einai:");
                 System.out.print(pathOfEachAnt.get(j).get(0).getSource().getId() + "->" + pathOfEachAnt.get(j).get(0).getDestination().getId() + "->");
                 for (int i = 1; i < pathOfEachAnt.get(j).size() - 1; i++) {
                     System.out.print(pathOfEachAnt.get(j).get(i).getDestination().getId() + "->");
+                    totalLengthOfThePath += pathOfEachAnt.get(j).get(i).getLength();
                 }
+
+                final double depositedpheromone = 1 / totalLengthOfThePath;
                 System.out.print(pathOfEachAnt.get(j).get(pathOfEachAnt.get(j).size() - 1).getDestination().getId());
                 System.out.println();
 
-                /* 
-                SOSOSOSOSOS: remove the loops from the path:
-                
-                 */
- /*
-                SOSOSOSOSOS: kane update thpheromonh gia to kathe path edw kai meta meiwse th 
+                /*
+                SOSOSOSOSOS: kane update th pheromonh gia to kathe path edw kai meta meiwse th 
                              pheromonh sta edges pou den peiran meros mesa sto path
                  */
-                //find mean pheromone in the edges
+                //find mean and median pheromone in the edges
                 Double mu = 0d;
                 for (Edge ed : edges) {
                     mu += ed.getPheromone();
@@ -154,17 +173,28 @@ public class AntLoadBalancingAlgorithm {
 
                 System.out.println("\nThe mean value of the deposited pheromone in the graph is: " + mu);
 
-                double valueOfEvaporatedPheromone = mu / 100;
+                //find median pheromone in the edges
+                DoubleStream sortedEdges = edges.stream().mapToDouble(Edge::getPheromone).sorted();
+                double median = edges.size() % 2 == 0
+                        ? sortedEdges.skip(edges.size() / 2 - 1).limit(2).average().getAsDouble()
+                        : sortedEdges.skip(edges.size() / 2).findFirst().getAsDouble();
+
+                double valueOfEvaporatedPheromone = median / 100;
                 System.out.println("the value of the evaporated pheromone is: " + valueOfEvaporatedPheromone);
 
-                System.exit(1);
-                /*
-                List<Vertex> lV = this.getPath(destination);
-                System.out.println("\n\n h lush einai: ");
-                for (Vertex v : lV) {
-                    System.out.println(v.getName());
-                }
-                 */
+                System.out.println("the value of the evaporated pheromone is: " + valueOfEvaporatedPheromone);
+
+                //deposit pheromone in the path
+                pathOfEachAnt.get(j).forEach(ed -> {
+                    ed.depositePheromone(depositedpheromone);
+                });
+
+                //evaporate pheromone from all the edges
+                edges.forEach((ed) -> {
+                    //ed.evaporatePheromone(valueOfEvaporatedPheromone);
+                    ed.evaporatePheromone(0.0001);
+                });
+
             } // each ant path
         } // run the algorithm 50 times 
         return null;

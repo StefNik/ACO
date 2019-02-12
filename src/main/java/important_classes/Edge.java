@@ -49,6 +49,19 @@ public class Edge {
         return this.pheromone;
     }
 
+    public void depositePheromone(double pheromone) {
+        this.pheromone += pheromone;
+    }
+
+    //here I can have the latency as length
+    public double getLength() {
+        return this.weight;
+    }
+
+    public void evaporatePheromone(double pheromoneForEvaporation) {
+        this.pheromone -= pheromoneForEvaporation;
+    }
+
     public void updatePheromone(double pheromone) {
         this.pheromone = pheromone;
     }
