@@ -20,8 +20,7 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author StefNik 
- *                  auto einai to teleutaio version
+ * @author StefNik auto einai to teleutaio version
  */
 public class AntLoadBalancingAlgorithm {
 
@@ -35,6 +34,8 @@ public class AntLoadBalancingAlgorithm {
     private Set<Vertex> settledNodes;
     private Set<Vertex> unSettledNodes;
     private ArrayList<ArrayList<Edge>> pathOfEachAnt = new ArrayList<>();
+
+    private int katiKainourgio = 1;
 
     public AntLoadBalancingAlgorithm(Graph graph, int alphaVal, int numOfAnts) {
         // create a copy of the array so that we can operate on this array
