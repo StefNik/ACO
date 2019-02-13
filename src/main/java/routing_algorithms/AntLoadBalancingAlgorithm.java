@@ -20,7 +20,8 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author StefNik
+ * @author StefNik 
+ *                  auto einai to teleutaio version
  */
 public class AntLoadBalancingAlgorithm {
 
